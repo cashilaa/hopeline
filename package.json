@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0 --port $PORT",
-    "start": "vite preview --host 0.0.0.0 --port $PORT",
+    "start": "serve -s dist -l $PORT",
     "server": "json-server --watch db.json --port 3001",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
@@ -24,6 +24,7 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.57.0",
     "react-router-dom": "^7.6.2",
+    "serve": "^14.2.3",
     "tailwindcss": "^4.1.8",
     "yup": "^1.6.1"
   },
