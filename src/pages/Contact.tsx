@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Phone, Mail, MapPin, Clock, AlertCircle, CheckCircle } from 'lucide-react';
@@ -18,7 +19,17 @@ const schema = yup.object({
   reporterEmail: yup.string().email('Invalid email format').optional()
 });
 
-type FormData = yup.InferType<typeof schema>;
+interface FormData {
+  childName: string;
+  age: number;
+  gender: string;
+  lastSeenLocation: string;
+  dateMissing: string;
+  description: string;
+  reporterName: string;
+  reporterContact: string;
+  reporterEmail?: string;
+}
 
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +41,7 @@ const Contact = () => {
     reset,
     formState: { errors }
   } = useForm<FormData>({
-    resolver: yupResolver(schema)
+    resolver: yupResolver(schema) as any
   });
 
   const fadeInUp = {
@@ -47,7 +58,7 @@ const Contact = () => {
     }
   };
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
