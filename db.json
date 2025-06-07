@@ -1,7 +1,7 @@
 {
   "reports": [
     {
-      "id": 1,
+      "id": "1",
       "childName": "Sample Child",
       "age": 8,
       "gender": "Male",
@@ -11,8 +11,36 @@
       "reporterName": "John Doe",
       "reporterContact": "+254700000000",
       "reporterEmail": "john@example.com",
-      "status": "pending",
+      "status": "resolved",
       "dateReported": "2024-01-16T10:30:00.000Z"
+    },
+    {
+      "id": "4d2c",
+      "reporterEmail": "johndoe@gmail.com",
+      "reporterContact": "0266717727",
+      "reporterName": "John doe",
+      "description": "jhbbkl",
+      "dateMissing": "2025-06-04",
+      "lastSeenLocation": "unniversity",
+      "gender": "Male",
+      "age": 7,
+      "childName": "John Doe",
+      "status": "pending",
+      "dateReported": "2025-06-07T02:15:39.844Z"
+    },
+    {
+      "id": "3d1f",
+      "reporterEmail": "johndoe@gmail.com",
+      "reporterContact": "0266717727",
+      "reporterName": "John joe",
+      "description": "fksk sk",
+      "dateMissing": "2025-06-03",
+      "lastSeenLocation": "unniversity",
+      "gender": "Female",
+      "age": 9,
+      "childName": "John joe",
+      "status": "pending",
+      "dateReported": "2025-06-07T02:19:06.681Z"
     }
   ]
 }

@@ -69,7 +69,12 @@ const Contact = () => {
         dateReported: new Date().toISOString()
       };
 
-      const response = await fetch('http://localhost:3001/reports', {
+      // Use different endpoints for development vs production
+      const apiUrl = import.meta.env.MODE === 'development' 
+        ? 'http://localhost:3001/reports'  // JSON Server in development
+        : '/api/reports';                   // Express server in production
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
