@@ -5,6 +5,7 @@ import type { SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Phone, Mail, MapPin, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 // Form validation schema
 const schema = yup.object({
@@ -69,21 +70,29 @@ const Contact = () => {
         dateReported: new Date().toISOString()
       };
 
-      const response = await fetch('http://localhost:3001/reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reportData),
-      });
-
-      if (response.ok) {
+      console.log('Submitting report data:', reportData);
+      
+      // Insert data directly to Supabase
+      const { data: insertedData, error } = await supabase
+        .from('reports')
+        .insert([reportData])
+        .select();
+      
+      if (!error) {
+        console.log('Report submitted successfully:', insertedData);
         setSubmitStatus('success');
         reset();
       } else {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         setSubmitStatus('error');
       }
     } catch (error) {
+      console.error('Submission error:', error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -169,8 +178,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Office Hours</h3>
-                    <p className="text-gray-600">Monday - Friday: 8:00 AM - 6:00 PM</p>
-                    <p className="text-gray-600">Saturday: 9:00 AM - 4:00 PM</p>
+                    <p className="text-gray-600">Monday - Sunday: 24/7</p>
                     <p className="text-sm text-primary-600 mt-1">Emergency line always open</p>
                   </div>
                 </div>

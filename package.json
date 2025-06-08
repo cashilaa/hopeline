@@ -4,18 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port $PORT",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview --host 0.0.0.0 --port $PORT",
-    "start": "serve -s dist -l $PORT",
-    "server": "json-server --watch db.json --port 3001",
-    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
+    "@supabase/supabase-js": "^2.50.0",
     "@tailwindcss/postcss": "^4.1.8",
     "autoprefixer": "^10.4.21",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "framer-motion": "^12.16.0",
     "json-server": "^1.0.0-beta.3",
     "lucide-react": "^0.513.0",
