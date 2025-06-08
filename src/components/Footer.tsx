@@ -1,4 +1,4 @@
-import { Heart, Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -8,10 +8,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Mission */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="bg-white p-2 rounded-lg">
-                <Heart className="h-6 w-6 text-primary-600" />
-              </div>
+            <div className="flex items-center space-x-3 mb-4">
+              <img 
+                src="/logohope.jpg" 
+                alt="HopeLine Logo" 
+                className="h-16 w-auto rounded-lg"
+              />
               <span className="text-xl font-bold">Hopeline Child Tracing Kenya</span>
             </div>
             <p className="text-primary-100 mb-4">
