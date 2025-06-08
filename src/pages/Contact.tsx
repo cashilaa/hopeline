@@ -5,6 +5,7 @@ import type { SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Phone, Mail, MapPin, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 // Form validation schema
 const schema = yup.object({
@@ -69,26 +70,29 @@ const Contact = () => {
         dateReported: new Date().toISOString()
       };
 
-      // Use different endpoints for development vs production
-      const apiUrl = import.meta.env.MODE === 'development' 
-        ? 'http://localhost:3001/reports'  // JSON Server in development
-        : '/api/reports';                   // Express server in production
+      console.log('Submitting report data:', reportData);
       
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reportData),
-      });
-
-      if (response.ok) {
+      // Insert data directly to Supabase
+      const { data: insertedData, error } = await supabase
+        .from('reports')
+        .insert([reportData])
+        .select();
+      
+      if (!error) {
+        console.log('Report submitted successfully:', insertedData);
         setSubmitStatus('success');
         reset();
       } else {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         setSubmitStatus('error');
       }
     } catch (error) {
+      console.error('Submission error:', error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);

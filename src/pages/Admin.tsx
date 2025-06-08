@@ -13,6 +13,7 @@ import {
   Calendar,
   MapPin
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface Report {
   id: number;
@@ -55,9 +56,24 @@ const Admin = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch('http://localhost:3001/reports');
-      const data = await response.json();
-      setReports(data);
+      console.log('Fetching reports from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*');
+      
+      if (error) {
+        console.error('Supabase fetch error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
+      console.log('Reports fetched successfully:', data);
+      setReports(data || []);
     } catch (error) {
       console.error('Failed to fetch reports:', error);
     } finally {
@@ -85,21 +101,20 @@ const Admin = () => {
 
   const updateReportStatus = async (id: number, status: 'pending' | 'resolved') => {
     try {
-      const response = await fetch(`http://localhost:3001/reports/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
-      });
+      const { error } = await supabase
+        .from('reports')
+        .update({ status })
+        .eq('id', id);
 
-      if (response.ok) {
+      if (!error) {
         setReports(reports.map(report =>
           report.id === id ? { ...report, status } : report
         ));
         if (selectedReport && selectedReport.id === id) {
           setSelectedReport({ ...selectedReport, status });
         }
+      } else {
+        throw error;
       }
     } catch (error) {
       console.error('Failed to update report status:', error);
