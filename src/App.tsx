@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import OurWork from './pages/OurWork';
 import Contact from './pages/Contact';
+import LostChildren from "./pages/lost-children"
 import Admin from './pages/Admin';
 import AdminLogin from './pages/AdminLogin';
 
@@ -21,6 +22,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/our-work" element={<OurWork />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/lost-children" element={<LostChildren />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<Admin />} />
             </Routes>
