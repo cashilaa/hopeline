@@ -22,11 +22,14 @@ const AdminPostSuccessStory = ({ onClose, onSuccess, story }: AdminPostSuccessSt
     location: story?.location || "",
     date_reunited: story?.date_reunited || "",
     story_details: story?.story_details || "",
-    image_url: story?.image_url || "",
+    image_child_url: story?.image_child_url || "",
+    image_reunited_url: story?.image_reunited_url || "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>(story?.image_url || "")
+  const [imageChildFile, setImageChildFile] = useState<File | null>(null)
+  const [imageReunitedFile, setImageReunitedFile] = useState<File | null>(null)
+  const [imageChildPreview, setImageChildPreview] = useState<string>(story?.image_child_url || "")
+  const [imageReunitedPreview, setImageReunitedPreview] = useState<string>(story?.image_reunited_url || "")
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -36,22 +39,27 @@ const AdminPostSuccessStory = ({ onClose, onSuccess, story }: AdminPostSuccessSt
     }))
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: "child" | "reunited") => {
     const file = e.target.files?.[0]
     if (file) {
-      setImageFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+        if (type === "child") {
+          setImageChildFile(file)
+          setImageChildPreview(reader.result as string)
+        } else {
+          setImageReunitedFile(file)
+          setImageReunitedPreview(reader.result as string)
+        }
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadImage = async (file: File, type: "child" | "reunited"): Promise<string | null> => {
     try {
       const fileExt = file.name.split(".").pop()
-      const fileName = `success-story-${Date.now()}.${fileExt}`
+      const fileName = `success-story-${type}-${Date.now()}.${fileExt}`
       const filePath = `success-stories/${fileName}`
 
       const { error: uploadError } = await supabase.storage.from("images").upload(filePath, file)
@@ -65,6 +73,13 @@ const AdminPostSuccessStory = ({ onClose, onSuccess, story }: AdminPostSuccessSt
         data: { publicUrl },
       } = supabase.storage.from("images").getPublicUrl(filePath)
 
+      console.log("Supabase publicUrl for", type, ":", publicUrl)
+      if (!publicUrl) {
+        alert("Image upload failed: No public URL returned. Check Supabase bucket permissions.");
+      } else {
+        alert("Image uploaded! Public URL: " + publicUrl);
+      }
+
       return publicUrl
     } catch (error) {
       console.error("Error uploading image:", error)
@@ -77,20 +92,28 @@ const AdminPostSuccessStory = ({ onClose, onSuccess, story }: AdminPostSuccessSt
     setIsSubmitting(true)
 
     try {
-      let imageUrl = formData.image_url
+      let imageChildUrl = formData.image_child_url
+      let imageReunitedUrl = formData.image_reunited_url
 
-      // Upload new image if selected
-      if (imageFile) {
-        const uploadedUrl = await uploadImage(imageFile)
+      // Upload new images if selected
+      if (imageChildFile) {
+        const uploadedUrl = await uploadImage(imageChildFile, "child")
         if (uploadedUrl) {
-          imageUrl = uploadedUrl
+          imageChildUrl = uploadedUrl
+        }
+      }
+      if (imageReunitedFile) {
+        const uploadedUrl = await uploadImage(imageReunitedFile, "reunited")
+        if (uploadedUrl) {
+          imageReunitedUrl = uploadedUrl
         }
       }
 
       const storyData = {
         ...formData,
         age: Number.parseInt(formData.age),
-        image_url: imageUrl,
+        image_child_url: imageChildUrl,
+        image_reunited_url: imageReunitedUrl,
         updated_at: new Date().toISOString(),
       }
 
@@ -146,27 +169,53 @@ const AdminPostSuccessStory = ({ onClose, onSuccess, story }: AdminPostSuccessSt
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Image Upload */}
+            {/* Image Uploads */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <ImageIcon className="inline h-4 w-4 mr-1" />
-                Story Image
+                Child's Photo (before reunification)
               </label>
               <div className="flex items-center space-x-4">
                 <div className="flex-1">
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleImageChange}
-                    placeholder="Upload story image"
+                    onChange={(e) => handleImageChange(e, "child")}
+                    placeholder="Upload child image"
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                 </div>
-                {imagePreview && (
+                {imageChildPreview && (
                   <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
                     <img
-                      src={imagePreview || "/placeholder.svg"}
-                      alt="Preview"
+                      src={imageChildPreview || "/placeholder.svg"}
+                      alt="Child Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <ImageIcon className="inline h-4 w-4 mr-1" />
+                Reunited Photo (with family)
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, "reunited")}
+                    placeholder="Upload reunited image"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                  />
+                </div>
+                {imageReunitedPreview && (
+                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
+                    <img
+                      src={imageReunitedPreview || "/placeholder.svg"}
+                      alt="Reunited Preview"
                       className="w-full h-full object-cover"
                     />
                   </div>

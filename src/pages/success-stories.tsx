@@ -11,6 +11,8 @@ interface SuccessStory {
   title: string
   description: string
   image_url: string
+  image_child_url?: string
+  image_reunited_url?: string
   child_name: string
   age: number
   location: string
@@ -124,7 +126,7 @@ const SuccessStories = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('/hop2.jpg?height=600&width=1200&text=Happy+Family+Reunion')",
+            backgroundImage: "url('/hop4.jpg?height=600&width=1200&text=Happy+Family+Reunion')",
           }}
         ></div>
         <div className="absolute inset-0 bg-black opacity-60"></div>
@@ -193,12 +195,40 @@ const SuccessStories = () => {
                 variants={fadeInUp}
                 whileHover={{ y: -5 }}
               >
-                <div className="h-64 bg-gray-200 overflow-hidden">
-                  <img
-                    src={story.image_url || "/placeholder.svg"}
-                    alt={story.title}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="flex h-64">
+                  <div
+                    className="w-1/2 h-full bg-gray-200 overflow-hidden parallax-img"
+                    style={{
+                      backgroundImage: `url('${story.image_child_url || "/placeholder.svg"}')`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundAttachment: "fixed",
+                    }}
+                  >
+                    {/* fallback for accessibility */}
+                    <img
+                      src={story.image_child_url || "/placeholder.svg"}
+                      alt={story.title + " (child before reunification)"}
+                      className="w-full h-full object-cover opacity-0"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div
+                    className="w-1/2 h-full bg-gray-200 overflow-hidden parallax-img"
+                    style={{
+                      backgroundImage: `url('${story.image_reunited_url || "/placeholder.svg"}')`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      backgroundAttachment: "fixed",
+                    }}
+                  >
+                    <img
+                      src={story.image_reunited_url || "/placeholder.svg"}
+                      alt={story.title + " (reunited with family)"}
+                      className="w-full h-full object-cover opacity-0"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
 
                 <div className="p-6">

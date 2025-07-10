@@ -449,7 +449,8 @@ const AdminEnhanced = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child Image</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reunited Image</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Reunited</th>
@@ -460,7 +461,10 @@ const AdminEnhanced = () => {
                     {successStories.map((story) => (
                       <tr key={story.id}>
                         <td className="px-4 py-2">
-                          <img src={story.image_url || "/placeholder.svg"} alt={story.title} className="w-16 h-16 object-cover rounded" />
+                          <img src={story.image_child_url || "/placeholder.svg"} alt="Child" className="w-16 h-16 object-cover rounded" />
+                        </td>
+                        <td className="px-4 py-2">
+                          <img src={story.image_reunited_url || "/placeholder.svg"} alt="Reunited" className="w-16 h-16 object-cover rounded" />
                         </td>
                         <td className="px-4 py-2 font-semibold">{story.title}</td>
                         <td className="px-4 py-2">{story.child_name}, {story.age}</td>
@@ -543,7 +547,7 @@ const AdminEnhanced = () => {
                     {successStories.map((story) => (
                       <tr key={story.id}>
                         <td className="px-4 py-2">
-                          <img src={story.image_url || "/placeholder.svg"} alt={story.title} className="w-16 h-16 object-cover rounded" />
+                          <img src={story.image_child_url || "/placeholder.svg"} alt={story.title} className="w-16 h-16 object-cover rounded" />
                         </td>
                         <td className="px-4 py-2 font-semibold">{story.title}</td>
                         <td className="px-4 py-2">{story.child_name}, {story.age}</td>
