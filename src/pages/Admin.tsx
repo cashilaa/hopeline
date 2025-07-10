@@ -7,12 +7,9 @@ import {
   LogOut,
   Search,
   Filter,
-  Eye,
   CheckCircle,
   Clock,
   AlertCircle,
-  Calendar,
-  MapPin,
   Plus,
   Users,
   FileText,
@@ -57,8 +54,7 @@ const AdminEnhanced = () => {
   const [activeTab, setActiveTab] = useState<"reports" | "posted" | "successStories">("reports")
   const [reports, setReports] = useState<Report[]>([])
   const [lostChildren, setLostChildren] = useState<LostChild[]>([])
-  const [filteredReports, setFilteredReports] = useState<Report[]>([])
-  const [filteredChildren, setFilteredChildren] = useState<LostChild[]>([])
+  // Removed unused filteredReports and filteredChildren
   const [successStories, setSuccessStories] = useState<any[]>([])
   const [selectedSuccessStory, setSelectedSuccessStory] = useState<any | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -81,13 +77,7 @@ const AdminEnhanced = () => {
     fetchData()
   }, [navigate])
 
-  useEffect(() => {
-    if (activeTab === "reports") {
-      filterReports()
-    } else {
-      filterChildren()
-    }
-  }, [reports, lostChildren, searchTerm, statusFilter, activeTab])
+  // Removed useEffect for filtering reports/children as filtered state is no longer used
 
   const fetchData = async () => {
     try {
@@ -136,42 +126,7 @@ const AdminEnhanced = () => {
     }
   }
 
-  const filterReports = () => {
-    let filtered = reports
-
-    if (statusFilter !== "all" && (statusFilter === "pending" || statusFilter === "resolved")) {
-      filtered = filtered.filter((report) => report.status === statusFilter)
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (report) =>
-          report.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.lastSeenLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.reporterName.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
-
-    setFilteredReports(filtered)
-  }
-
-  const filterChildren = () => {
-    let filtered = lostChildren
-
-    if (statusFilter !== "all" && (statusFilter === "active" || statusFilter === "found")) {
-      filtered = filtered.filter((child) => child.status === statusFilter)
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (child) =>
-          child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          child.last_seen_location.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
-
-    setFilteredChildren(filtered)
-  }
+  // Removed filterReports and filterChildren functions as filtered state is no longer used
 
   const updateReportStatus = async (id: number, status: "pending" | "resolved") => {
     try {
@@ -426,6 +381,7 @@ const AdminEnhanced = () => {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
                   className="pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+                  title="Status Filter"
                 >
                   <option value="all">All Status</option>
         {activeTab === "reports" ? (
