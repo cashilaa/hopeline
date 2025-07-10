@@ -1,21 +1,24 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+"use client"
+
+import { useState } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { motion } from "framer-motion"
+import { Menu, X } from "lucide-react"
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false)
+  const location = useLocation()
 
   const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'About', path: '/about' },
-    { name: 'Our Work', path: '/our-work' },
+    { name: "Home", path: "/" },
+    { name: "About", path: "/about" },
+    { name: "Our Work", path: "/our-work" },
     { name: "Missing Children", path: "/lost-children" },
-    { name: 'Contact', path: '/contact' },
-  ];
+    { name: "Success Stories", path: "/success-stories" },
+    { name: "Contact", path: "/contact" },
+  ]
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -24,11 +27,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img 
-                src="/logohope.jpg" 
-                alt="HopeLine Logo" 
-                className="h-16 w-auto"
-              />
+              <img src="/logohope.jpg" alt="HopeLine Logo" className="h-16 w-auto" />
             </Link>
           </div>
 
@@ -40,8 +39,8 @@ const Navbar = () => {
                 to={item.path}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                   isActive(item.path)
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'
+                    ? "text-primary-600 bg-primary-50"
+                    : "text-gray-700 hover:text-primary-600 hover:bg-primary-50"
                 }`}
               >
                 {item.name}
@@ -70,7 +69,7 @@ const Navbar = () => {
       {/* Mobile Navigation */}
       <motion.div
         initial={false}
-        animate={isOpen ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+        animate={isOpen ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
         transition={{ duration: 0.3 }}
         className="md:hidden overflow-hidden bg-white border-t border-gray-200"
       >
@@ -82,8 +81,8 @@ const Navbar = () => {
               onClick={() => setIsOpen(false)}
               className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                 isActive(item.path)
-                  ? 'text-primary-600 bg-primary-50'
-                  : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'
+                  ? "text-primary-600 bg-primary-50"
+                  : "text-gray-700 hover:text-primary-600 hover:bg-primary-50"
               }`}
             >
               {item.name}
@@ -99,7 +98,7 @@ const Navbar = () => {
         </div>
       </motion.div>
     </nav>
-  );
-};
+  )
+}
 
-export default Navbar;
+export default Navbar

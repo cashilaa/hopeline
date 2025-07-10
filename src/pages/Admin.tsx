@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { supabase } from "../lib/supabase"
 import AdminPostChild from "../components/admin-post-child"
+import AdminPostSuccessStory from "../components/admin-post-success-story"
 
 interface Report {
   id: number
@@ -62,6 +63,7 @@ const AdminEnhanced = () => {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [selectedChild, setSelectedChild] = useState<LostChild | null>(null)
   const [showPostForm, setShowPostForm] = useState(false)
+  const [showPostSuccessStory, setShowPostSuccessStory] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -245,6 +247,13 @@ const AdminEnhanced = () => {
               >
                 <Plus className="h-4 w-4" />
                 <span>Post Missing Child</span>
+              </button>
+              <button
+                onClick={() => setShowPostSuccessStory(true)}
+                className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Post Success Story</span>
               </button>
               <button
                 onClick={handleLogout}
@@ -573,6 +582,16 @@ const AdminEnhanced = () => {
           onSuccess={() => {
             fetchData()
             setShowPostForm(false)
+          }}
+        />
+      )}
+      {/* Post Success Story Modal */}
+      {showPostSuccessStory && (
+        <AdminPostSuccessStory
+          onClose={() => setShowPostSuccessStory(false)}
+          onSuccess={() => {
+            fetchData()
+            setShowPostSuccessStory(false)
           }}
         />
       )}
