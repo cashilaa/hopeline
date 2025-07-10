@@ -188,7 +188,7 @@ const SuccessStories = () => {
             whileInView="animate"
             viewport={{ once: true }}
           >
-            {stories.map((story, index) => (
+            {stories.map((story) => (
               <motion.div
                 key={story.id}
                 className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
