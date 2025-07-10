@@ -38,6 +38,8 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [imageFile2, setImageFile2] = useState<File | null>(null)
+  const [imagePreview2, setImagePreview2] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -49,13 +51,18 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
     }))
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, which: "first" | "second" = "first") => {
     const file = e.target.files?.[0]
     if (file) {
-      setImageFile(file)
       const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
+      reader.onload = (ev) => {
+        if (which === "first") {
+          setImageFile(file)
+          setImagePreview(ev.target?.result as string)
+        } else {
+          setImageFile2(file)
+          setImagePreview2(ev.target?.result as string)
+        }
       }
       reader.readAsDataURL(file)
     }
@@ -116,14 +123,20 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
 
     try {
       let imageUrl = ""
+      let imageUrl2 = ""
 
       if (imageFile) {
-        setUploadProgress(25)
+        setUploadProgress(20)
         imageUrl = await uploadToCloudinary(imageFile)
-        setUploadProgress(50)
+        setUploadProgress(40)
+      }
+      if (imageFile2) {
+        setUploadProgress(60)
+        imageUrl2 = await uploadToCloudinary(imageFile2)
+        setUploadProgress(80)
       }
 
-      setUploadProgress(75)
+      setUploadProgress(90)
 
       const { error } = await supabase.from("lost_children").insert([
         {
@@ -137,6 +150,7 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
           contact_email: formData.contact_email,
           additional_info: formData.additional_info,
           image_url: imageUrl,
+          image_url2: imageUrl2,
           posted_date: new Date().toISOString(),
           status: "active"
         },
@@ -156,9 +170,14 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
     }
   }
 
-  const removeImage = () => {
-    setImageFile(null)
-    setImagePreview("")
+  const removeImage = (which: "first" | "second" = "first") => {
+    if (which === "first") {
+      setImageFile(null)
+      setImagePreview("")
+    } else {
+      setImageFile2(null)
+      setImagePreview2("")
+    }
   }
 
   return (
@@ -171,21 +190,26 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-2xl font-bold text-gray-900">Post Missing Child</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">
-              <X className="h-6 w-6" />
-            </button>
+<button
+  onClick={onClose}
+  className="text-gray-400 hover:text-gray-600 text-2xl"
+  title="Close dialog"
+  aria-label="Close dialog"
+>
+  <X className="h-6 w-6" />
+</button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Image Upload */}
+            {/* Image Uploads */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Child's Photo</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Child's Photo 1</label>
               {!imagePreview ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleImageChange}
+                    onChange={(e) => handleImageChange(e, "first")}
                     className="hidden"
                     id="image-upload"
                     placeholder="Upload child's photo"
@@ -205,12 +229,52 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
                     className="w-full h-64 object-cover rounded-lg"
                   />
                   <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+  type="button"
+  onClick={() => removeImage("first")}
+  className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+  title="Remove first image"
+  aria-label="Remove first image"
+>
+  <X className="h-4 w-4" />
+</button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Child's Photo 2</label>
+              {!imagePreview2 ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, "second")}
+                    className="hidden"
+                    id="image-upload-2"
+                    placeholder="Upload child's photo 2"
+                    title="Upload child's photo 2"
+                  />
+                  <label htmlFor="image-upload-2" className="cursor-pointer">
+                    <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Click to upload a second photo</p>
+                    <p className="text-sm text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                  </label>
+                </div>
+              ) : (
+                <div className="relative">
+                  <img
+                    src={imagePreview2 || "/placeholder.svg"}
+                    alt="Preview 2"
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                  <button
+  type="button"
+  onClick={() => removeImage("second")}
+  className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+  title="Remove second image"
+  aria-label="Remove second image"
+>
+  <X className="h-4 w-4" />
+</button>
                 </div>
               )}
             </div>

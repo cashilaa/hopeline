@@ -467,19 +467,128 @@ const AdminEnhanced = () => {
 
         {/* Content based on active tab */}
         {activeTab === "reports" ? (
-          /* Reports Table - Same as before */
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            {/* ...reports table code... */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                {/* ...table head and body... */}
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child Name</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Gender</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Last Seen Location</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Missing</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {reports.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
+                        No reports found.
+                      </td>
+                    </tr>
+                  ) : (
+                    reports
+                      .filter((r) =>
+                        r.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        r.lastSeenLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        r.reporterName.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .filter((r) => statusFilter === "all" || r.status === statusFilter)
+                      .map((report) => (
+                        <tr key={report.id}>
+                          <td className="px-4 py-2">{report.childName}</td>
+                          <td className="px-4 py-2">{report.age}</td>
+                          <td className="px-4 py-2">{report.gender}</td>
+                          <td className="px-4 py-2">{report.lastSeenLocation}</td>
+                          <td className="px-4 py-2">{new Date(report.dateMissing).toLocaleDateString()}</td>
+                          <td className="px-4 py-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                              {getStatusIcon(report.status)}
+                              <span className="ml-1 capitalize">{report.status}</span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 space-x-2">
+                            <button
+                              className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              onClick={() => setSelectedReport(report)}
+                            >
+                              View
+                            </button>
+                            {report.status === "pending" && (
+                              <button
+                                className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                                onClick={() => updateReportStatus(report.id, "resolved")}
+                              >
+                                Mark as Resolved
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
               </table>
             </div>
           </div>
         ) : activeTab === "posted" ? (
-          /* Posted Children Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* ...posted children grid code... */}
+            {lostChildren.length === 0 ? (
+              <div className="col-span-full text-center text-gray-500 py-8">
+                No posted children found.
+              </div>
+            ) : (
+              lostChildren
+                .filter((child) =>
+                  child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  child.last_seen_location.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .filter((child) => statusFilter === "all" || child.status === statusFilter)
+                .map((child) => (
+                  <div
+                    key={child.id}
+                    className="bg-white rounded-lg shadow p-6 flex flex-col"
+                  >
+                    <div className="w-full h-48 bg-gray-200 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+                      <img
+                        src={child.image_url || "/placeholder.svg"}
+                        alt={child.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">{child.name}</h3>
+                      <p className="text-sm text-gray-600 mb-1">Age: {child.age}</p>
+                      <p className="text-sm text-gray-600 mb-1">Gender: {child.gender}</p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        Last Seen: {child.last_seen_location} on {new Date(child.last_seen_date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-2">{child.description}</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(child.status)}`}>
+                        {getStatusIcon(child.status)}
+                        <span className="ml-1 capitalize">{child.status}</span>
+                      </span>
+                    </div>
+                    <div className="mt-4 flex space-x-2">
+                      <button
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        onClick={() => setSelectedChild(child)}
+                      >
+                        View
+                      </button>
+                      {child.status === "active" && (
+                        <button
+                          className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                          onClick={() => updateChildStatus(child.id, "found")}
+                        >
+                          Mark as Found
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
         ) : activeTab === "successStories" ? (
           /* Success Stories List */
