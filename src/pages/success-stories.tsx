@@ -196,37 +196,18 @@ const SuccessStories = () => {
                 whileHover={{ y: -5 }}
               >
                 <div className="flex h-64">
-                  <div
-                    className="w-1/2 h-full bg-gray-200 overflow-hidden parallax-img"
-                    style={{
-                      backgroundImage: `url('${story.image_child_url || "/placeholder.svg"}')`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      backgroundAttachment: "fixed",
-                    }}
-                  >
-                    {/* fallback for accessibility */}
+                  <div className="w-1/2 h-full bg-gray-200 overflow-hidden flex items-center justify-center">
                     <img
                       src={story.image_child_url || "/placeholder.svg"}
                       alt={story.title + " (child before reunification)"}
-                      className="w-full h-full object-cover opacity-0"
-                      aria-hidden="true"
+                      className="w-full h-full object-cover"
                     />
                   </div>
-                  <div
-                    className="w-1/2 h-full bg-gray-200 overflow-hidden parallax-img"
-                    style={{
-                      backgroundImage: `url('${story.image_reunited_url || "/placeholder.svg"}')`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      backgroundAttachment: "fixed",
-                    }}
-                  >
+                  <div className="w-1/2 h-full bg-gray-200 overflow-hidden flex items-center justify-center">
                     <img
                       src={story.image_reunited_url || "/placeholder.svg"}
                       alt={story.title + " (reunited with family)"}
-                      className="w-full h-full object-cover opacity-0"
-                      aria-hidden="true"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </div>

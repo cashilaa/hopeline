@@ -16,6 +16,7 @@ interface LostChild {
   contact_info: string
   contact_email?: string
   image_url?: string
+  image_url2?: string
   additional_info?: string
   posted_date: string
   status: "active" | "found"
@@ -206,13 +207,22 @@ const LostChildren = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                {child.image_url && (
-                  <div className="h-64 bg-gray-200">
-                    <img
-                      src={child.image_url || "/placeholder.svg"}
-                      alt={child.name}
-                      className="w-full h-full object-cover"
-                    />
+                {(child.image_url || child.image_url2) && (
+                  <div className="h-64 bg-gray-200 flex">
+                    {child.image_url && (
+                      <img
+                        src={child.image_url}
+                        alt={child.name + " photo 1"}
+                        className={`object-cover ${child.image_url2 ? "w-1/2 h-full" : "w-full h-full"}`}
+                      />
+                    )}
+                    {child.image_url2 && (
+                      <img
+                        src={child.image_url2}
+                        alt={child.name + " photo 2"}
+                        className={`object-cover ${child.image_url ? "w-1/2 h-full" : "w-full h-full"}`}
+                      />
+                    )}
                   </div>
                 )}
 
