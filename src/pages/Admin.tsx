@@ -16,9 +16,11 @@ import {
   Plus,
   Users,
   FileText,
+  Heart,
 } from "lucide-react"
 import { supabase } from "../lib/supabase"
 import AdminPostChild from "../components/admin-post-child"
+import AdminPostSuccessStory from "../components/admin-post-success-story"
 
 interface Report {
   id: number
@@ -52,16 +54,19 @@ interface LostChild {
 }
 
 const AdminEnhanced = () => {
-  const [activeTab, setActiveTab] = useState<"reports" | "posted">("reports")
+  const [activeTab, setActiveTab] = useState<"reports" | "posted" | "successStories">("reports")
   const [reports, setReports] = useState<Report[]>([])
   const [lostChildren, setLostChildren] = useState<LostChild[]>([])
   const [filteredReports, setFilteredReports] = useState<Report[]>([])
   const [filteredChildren, setFilteredChildren] = useState<LostChild[]>([])
+  const [successStories, setSuccessStories] = useState<any[]>([])
+  const [selectedSuccessStory, setSelectedSuccessStory] = useState<any | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "resolved" | "active" | "found">("all")
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [selectedChild, setSelectedChild] = useState<LostChild | null>(null)
   const [showPostForm, setShowPostForm] = useState(false)
+  const [showPostSuccessStory, setShowPostSuccessStory] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -110,9 +115,21 @@ const AdminEnhanced = () => {
       }
       setLostChildren(childrenData || [])
       console.log("Lost children fetched successfully:", childrenData?.length || 0)
+
+      // Fetch success stories
+      const { data: storiesData, error: storiesError } = await supabase
+        .from("success_stories")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+      if (storiesError) {
+        console.error("Success stories fetch error:", storiesError)
+        throw storiesError
+      }
+      setSuccessStories(storiesData || [])
+      console.log("Success stories fetched successfully:", storiesData?.length || 0)
     } catch (error) {
       console.error("Failed to fetch data:", error)
-      // You might want to show a user-friendly error message here
       alert("Failed to load data. Please check your internet connection and try again.")
     } finally {
       setIsLoading(false)
@@ -247,6 +264,13 @@ const AdminEnhanced = () => {
                 <span>Post Missing Child</span>
               </button>
               <button
+                onClick={() => setShowPostSuccessStory(true)}
+                className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Post Success Story</span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
               >
@@ -287,6 +311,19 @@ const AdminEnhanced = () => {
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4" />
                   <span>Posted Children ({lostChildren.length})</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab("successStories")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "successStories"
+                    ? "border-purple-500 text-purple-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Heart className="h-4 w-4 text-purple-600" />
+                  <span>Success Stories ({successStories.length})</span>
                 </div>
               </button>
             </nav>
@@ -391,17 +428,77 @@ const AdminEnhanced = () => {
                   className="pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
                 >
                   <option value="all">All Status</option>
-                  {activeTab === "reports" ? (
-                    <>
-                      <option value="pending">Pending</option>
-                      <option value="resolved">Resolved</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="active">Active</option>
-                      <option value="found">Found</option>
-                    </>
-                  )}
+        {activeTab === "reports" ? (
+          /* Reports Table - Same as before */
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            ...
+          </div>
+        ) : activeTab === "posted" ? (
+          /* Posted Children Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ...
+          </div>
+        ) : (
+          /* Success Stories List */
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4 text-purple-700">Success Stories</h2>
+            {successStories.length === 0 ? (
+              <p className="text-gray-500">No success stories posted yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Reunited</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {successStories.map((story) => (
+                      <tr key={story.id}>
+                        <td className="px-4 py-2">
+                          <img src={story.image_url || "/placeholder.svg"} alt={story.title} className="w-16 h-16 object-cover rounded" />
+                        </td>
+                        <td className="px-4 py-2 font-semibold">{story.title}</td>
+                        <td className="px-4 py-2">{story.child_name}, {story.age}</td>
+                        <td className="px-4 py-2">{new Date(story.date_reunited).toLocaleDateString()}</td>
+                        <td className="px-4 py-2 space-x-2">
+                          <button
+                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                            onClick={() => {
+                              setSelectedSuccessStory(story);
+                              setShowPostSuccessStory(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                            onClick={async () => {
+                              if (window.confirm("Are you sure you want to delete this success story?")) {
+                                const { error } = await supabase.from("success_stories").delete().eq("id", story.id);
+                                if (!error) {
+                                  fetchData();
+                                } else {
+                                  alert("Failed to delete story.");
+                                }
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
                 </select>
               </div>
             </div>
@@ -412,158 +509,79 @@ const AdminEnhanced = () => {
         {activeTab === "reports" ? (
           /* Reports Table - Same as before */
           <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* ...reports table code... */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Child
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reporter
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{report.childName}</div>
-                          <div className="text-sm text-gray-500">
-                            {report.age} years old, {report.gender}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          <div className="flex items-center mb-1">
-                            <MapPin className="h-4 w-4 text-gray-400 mr-1" />
-                            {report.lastSeenLocation}
-                          </div>
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 text-gray-400 mr-1" />
-                            {new Date(report.dateMissing).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{report.reporterName}</div>
-                          <div className="text-sm text-gray-500">{report.reporterContact}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}
-                        >
-                          {getStatusIcon(report.status)}
-                          <span className="ml-1 capitalize">{report.status}</span>
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => setSelectedReport(report)}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          {report.status === "pending" && (
-                            <button
-                              onClick={() => updateReportStatus(report.id, "resolved")}
-                              className="text-green-600 hover:text-green-900"
-                              title="Mark as resolved"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                {/* ...table head and body... */}
               </table>
             </div>
           </div>
-        ) : (
+        ) : activeTab === "posted" ? (
           /* Posted Children Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredChildren.map((child) => (
-              <motion.div
-                key={child.id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                {child.image_url && (
-                  <div className="h-48 bg-gray-200">
-                    <img
-                      src={child.image_url || "/placeholder.svg"}
-                      alt={child.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">{child.name}</h3>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(child.status)}`}
-                    >
-                      {getStatusIcon(child.status)}
-                      <span className="ml-1 capitalize">{child.status}</span>
-                    </span>
-                  </div>
-
-                  <div className="space-y-1 mb-3">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Age:</span> {child.age} years old
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Gender:</span> {child.gender}
-                    </p>
-                    <div className="flex items-start space-x-1">
-                      <MapPin className="h-3 w-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-gray-600">{child.last_seen_location}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-3 border-t">
-                    <p className="text-xs text-gray-500">Posted: {new Date(child.posted_date).toLocaleDateString()}</p>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setSelectedChild(child)}
-                        className="text-primary-600 hover:text-primary-900"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      {child.status === "active" && (
-                        <button
-                          onClick={() => updateChildStatus(child.id, "found")}
-                          className="text-green-600 hover:text-green-900"
-                          title="Mark as found"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            {/* ...posted children grid code... */}
           </div>
-        )}
+        ) : activeTab === "successStories" ? (
+          /* Success Stories List */
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4 text-purple-700">Success Stories</h2>
+            {successStories.length === 0 ? (
+              <p className="text-gray-500">No success stories posted yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Reunited</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {successStories.map((story) => (
+                      <tr key={story.id}>
+                        <td className="px-4 py-2">
+                          <img src={story.image_url || "/placeholder.svg"} alt={story.title} className="w-16 h-16 object-cover rounded" />
+                        </td>
+                        <td className="px-4 py-2 font-semibold">{story.title}</td>
+                        <td className="px-4 py-2">{story.child_name}, {story.age}</td>
+                        <td className="px-4 py-2">{new Date(story.date_reunited).toLocaleDateString()}</td>
+                        <td className="px-4 py-2 space-x-2">
+                          <button
+                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                            onClick={() => {
+                              setSelectedSuccessStory(story);
+                              setShowPostSuccessStory(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                            onClick={async () => {
+                              if (window.confirm("Are you sure you want to delete this success story?")) {
+                                const { error } = await supabase.from("success_stories").delete().eq("id", story.id);
+                                if (!error) {
+                                  fetchData();
+                                } else {
+                                  alert("Failed to delete story.");
+                                }
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Post Child Form Modal */}
@@ -574,6 +592,21 @@ const AdminEnhanced = () => {
             fetchData()
             setShowPostForm(false)
           }}
+        />
+      )}
+      {/* Post Success Story Modal */}
+      {showPostSuccessStory && (
+        <AdminPostSuccessStory
+          onClose={() => {
+            setShowPostSuccessStory(false);
+            setSelectedSuccessStory(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+            setShowPostSuccessStory(false);
+            setSelectedSuccessStory(null);
+          }}
+          story={selectedSuccessStory}
         />
       )}
 
