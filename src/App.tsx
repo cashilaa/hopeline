@@ -12,6 +12,8 @@ import LostChildren from "./pages/lost-children"
 import SuccessStories from "./pages/success-stories"
 import Admin from "./pages/Admin"
 import AdminLogin from "./pages/AdminLogin"
+import PrivacyPolicy from "./pages/PrivacyPolicy"
+import TermsOfService from "./pages/TermsOfService"
 
 function AppContent() {
   const location = useLocation()
@@ -29,6 +31,8 @@ function AppContent() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/lost-children" element={<LostChildren />} />
             <Route path="/success-stories" element={<SuccessStories />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<Admin />} />
           </Routes>

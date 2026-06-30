@@ -80,10 +80,20 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-primary-700 mt-8 pt-8 text-center">
-          <p className="text-primary-200 text-sm">
-            © 2024 Hopeline Child Tracing Kenya. All rights reserved.
-          </p>
+        <div className="border-t border-primary-700 mt-8 pt-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+            <p className="text-primary-200 text-sm">
+              © 2024 Hopeline Child Tracing Kenya. All rights reserved.
+            </p>
+            <div className="flex space-x-6 text-sm">
+              <Link to="/privacy-policy" className="text-primary-200 hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <Link to="/terms-of-service" className="text-primary-200 hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
