@@ -3,7 +3,8 @@ export async function uploadToR2(file: File, folder: string): Promise<string> {
   formData.append("file", file);
   formData.append("folder", folder);
 
-  const res = await fetch("http://localhost:3001/api/upload", {
+  const uploadUrl = import.meta.env.DEV ? "http://localhost:3001/api/upload" : "/api/upload";
+  const res = await fetch(uploadUrl, {
     method: "POST",
     body: formData,
   });

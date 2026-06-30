@@ -7,9 +7,9 @@
     "dev": "concurrently \"vite\" \"node server.js\"",
     "server": "node server.js",
     "build": "tsc -b && vite build",
+    "start": "node server-production.js",
     "lint": "eslint .",
-    "preview": "vite preview --host 0.0.0.0",
-    "start": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",
