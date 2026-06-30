@@ -6,6 +6,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { X, Save, ImageIcon } from "lucide-react"
 import { supabase } from "../lib/supabase"
+import { uploadToR2 } from "../lib/r2"
 
 interface PostChildFormData {
   name: string
@@ -68,53 +69,7 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
     }
   }
 
-  const uploadToCloudinary = async (file: File): Promise<string> => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-    
-    if (!cloudName) {
-      throw new Error("Cloudinary cloud name is not configured")
-    }
 
-    console.log("Uploading to Cloudinary with cloud name:", cloudName)
-
-    // Try with the preset first, then fallback to a default one
-    const formData = new FormData()
-    formData.append("file", file)
-
-    // Use a single preset, configurable via env
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "hlctk_missing_children"
-    formData.append("upload_preset", uploadPreset)
-    formData.append("folder", "missing_children")
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      )
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Cloudinary error response:", errorText)
-        
-        // If the preset doesn't exist, provide helpful error message
-        if (errorText.includes("Invalid upload preset")) {
-          throw new Error("Upload preset 'hlctk_missing_children' not found. Please create it in your Cloudinary dashboard.")
-        }
-        
-        throw new Error(`Failed to upload image: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      console.log("Upload successful:", data.secure_url)
-      return data.secure_url
-    } catch (error) {
-      console.error("Cloudinary upload error:", error)
-      throw error
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,12 +82,12 @@ const AdminPostChild = ({ onClose, onSuccess }: AdminPostChildProps) => {
 
       if (imageFile) {
         setUploadProgress(20)
-        imageUrl = await uploadToCloudinary(imageFile)
+        imageUrl = await uploadToR2(imageFile, "missing_children")
         setUploadProgress(40)
       }
       if (imageFile2) {
         setUploadProgress(60)
-        imageUrl2 = await uploadToCloudinary(imageFile2)
+        imageUrl2 = await uploadToR2(imageFile2, "missing_children")
         setUploadProgress(80)
       }
 

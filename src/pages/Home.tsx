@@ -1,9 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Heart, Users, Shield, Search, ArrowRight, ExternalLink } from "lucide-react"
+import MissingChildReportModal from "../components/MissingChildReportModal"
 
 export default function Home() {
+  const [showReportModal, setShowReportModal] = useState(false)
+
   const services = [
     {
       icon: Search,
@@ -31,6 +35,7 @@ export default function Home() {
 
   return (
     <div>
+      {showReportModal && <MissingChildReportModal onClose={() => setShowReportModal(false)} />}
       {/* Facebook Link Section - New Addition */}
       <section className="bg-red-600 text-white py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,13 +71,13 @@ export default function Home() {
               services across Kenya.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-<Link
-  to="/contact"
+<button
+  onClick={() => setShowReportModal(true)}
   className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center"
 >
   Report Missing Child
   <ArrowRight className="ml-2 h-5 w-5" />
-</Link>
+</button>
 <Link
   to="/about"
   className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors duration-200"
@@ -163,13 +168,13 @@ export default function Home() {
               counts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-<Link
-  to="/contact"
+<button
+  onClick={() => setShowReportModal(true)}
   className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center"
 >
   Report Missing Child
   <ArrowRight className="ml-2 h-5 w-5" />
-</Link>
+</button>
               <a
                 href="tel:+254728620614"
                 className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors duration-200"

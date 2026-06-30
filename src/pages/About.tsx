@@ -221,7 +221,7 @@ const About = () => {
             {objectives.map((objective, index) => (
               <motion.div
                 key={index}
-                className="bg-white bg-opacity-10 p-6 rounded-lg backdrop-blur-sm"
+                className="bg-primary-800 p-6 rounded-lg border border-primary-400"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.05 }}
               >
@@ -229,7 +229,7 @@ const About = () => {
                   <div className="bg-white bg-opacity-20 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-xl font-bold">{index + 1}</span>
                   </div>
-                  <p className="text-blue-100 leading-relaxed">
+                  <p className="text-white leading-relaxed">
                     {objective}
                   </p>
                 </div>

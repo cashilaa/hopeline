@@ -6,6 +6,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { X, Upload, Calendar, MapPin, User, FileText, ImageIcon } from "lucide-react"
 import { supabase } from "../lib/supabase"
+import { uploadToR2 } from "../lib/r2"
 
 interface AdminPostSuccessStoryProps {
   onClose: () => void
@@ -58,29 +59,7 @@ const AdminPostSuccessStory = ({ onClose, onSuccess, story }: AdminPostSuccessSt
 
   const uploadImage = async (file: File, type: "child" | "reunited"): Promise<string | null> => {
     try {
-      const fileExt = file.name.split(".").pop()
-      const fileName = `success-story-${type}-${Date.now()}.${fileExt}`
-      const filePath = `success-stories/${fileName}`
-
-      const { error: uploadError } = await supabase.storage.from("images").upload(filePath, file)
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError)
-        return null
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("images").getPublicUrl(filePath)
-
-      console.log("Supabase publicUrl for", type, ":", publicUrl)
-      if (!publicUrl) {
-        alert("Image upload failed: No public URL returned. Check Supabase bucket permissions.");
-      } else {
-        alert("Image uploaded! Public URL: " + publicUrl);
-      }
-
-      return publicUrl
+      return await uploadToR2(file, "success-stories")
     } catch (error) {
       console.error("Error uploading image:", error)
       return null

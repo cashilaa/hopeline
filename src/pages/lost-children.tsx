@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Calendar, MapPin, Phone, Mail, Search, Filter } from "lucide-react"
 import { supabase } from "../lib/supabase"
+import MissingChildReportModal from "../components/MissingChildReportModal"
 
 interface LostChild {
   id: number
@@ -23,6 +24,7 @@ interface LostChild {
 }
 
 const LostChildren = () => {
+  const [showReportModal, setShowReportModal] = useState(false)
   const [lostChildren, setLostChildren] = useState<LostChild[]>([])
   const [filteredChildren, setFilteredChildren] = useState<LostChild[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -113,15 +115,22 @@ const LostChildren = () => {
 
   return (
     <motion.div initial="initial" animate="animate" exit="exit" className="min-h-screen bg-gray-50">
+      {showReportModal && <MissingChildReportModal onClose={() => setShowReportModal(false)} />}
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div className="text-center" variants={fadeInUp}>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Missing Children</h1>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-6">
               Help us bring these children home. If you have any information about any of these missing children, please
               contact us immediately.
             </p>
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="bg-white text-blue-700 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200"
+            >
+              Report Missing Child
+            </button>
           </motion.div>
         </div>
       </section>

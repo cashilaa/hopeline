@@ -3,36 +3,10 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
-import {
-  LogOut,
-  Search,
-  Filter,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Plus,
-  Users,
-  FileText,
-  Heart,
-} from "lucide-react"
+import { LogOut, Search, Filter, CheckCircle, Clock, AlertCircle, Plus, Users, FileText, Heart, Bell } from "lucide-react"
 import { supabase } from "../lib/supabase"
 import AdminPostChild from "../components/admin-post-child"
 import AdminPostSuccessStory from "../components/admin-post-success-story"
-
-interface Report {
-  id: number
-  childName: string
-  age: number
-  gender: string
-  lastSeenLocation: string
-  dateMissing: string
-  description: string
-  reporterName: string
-  reporterContact: string
-  reporterEmail?: string
-  status: "pending" | "resolved"
-  dateReported: string
-}
 
 interface LostChild {
   id: number
@@ -51,15 +25,14 @@ interface LostChild {
 }
 
 const AdminEnhanced = () => {
-  const [activeTab, setActiveTab] = useState<"reports" | "posted" | "successStories">("reports")
-  const [reports, setReports] = useState<Report[]>([])
+  const [activeTab, setActiveTab] = useState<"publicReports" | "posted" | "successStories">("publicReports")
   const [lostChildren, setLostChildren] = useState<LostChild[]>([])
-  // Removed unused filteredReports and filteredChildren
   const [successStories, setSuccessStories] = useState<any[]>([])
+  const [publicReports, setPublicReports] = useState<any[]>([])
+  const [selectedPublicReport, setSelectedPublicReport] = useState<any | null>(null)
   const [selectedSuccessStory, setSelectedSuccessStory] = useState<any | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "resolved" | "active" | "found">("all")
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [selectedChild, setSelectedChild] = useState<LostChild | null>(null)
   const [showPostForm, setShowPostForm] = useState(false)
   const [showPostSuccessStory, setShowPostSuccessStory] = useState(false)
@@ -67,170 +40,99 @@ const AdminEnhanced = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Check authentication
     const token = localStorage.getItem("hlctk_admin_token")
-    if (!token) {
-      navigate("/admin/login")
-      return
-    }
-
+    if (!token) { navigate("/admin/login"); return }
     fetchData()
   }, [navigate])
 
-  // Removed useEffect for filtering reports/children as filtered state is no longer used
-
   const fetchData = async () => {
     try {
-      console.log("Fetching data from Supabase...")
-      
-      // Fetch reports
-      const { data: reportsData, error: reportsError } = await supabase.from("reports").select("*")
-
-      if (reportsError) {
-        console.error("Reports fetch error:", reportsError)
-        throw reportsError
-      }
-      setReports(reportsData || [])
-      console.log("Reports fetched successfully:", reportsData?.length || 0)
-
-      // Fetch posted lost children
-      const { data: childrenData, error: childrenError } = await supabase
-        .from("lost_children")
-        .select("*")
-        .order("posted_date", { ascending: false })
-
-      if (childrenError) {
-        console.error("Children fetch error:", childrenError)
-        throw childrenError
-      }
+      const [{ data: childrenData }, { data: storiesData }, { data: publicReportsData }] = await Promise.all([
+        supabase.from("lost_children").select("*").order("posted_date", { ascending: false }),
+        supabase.from("success_stories").select("*").order("created_at", { ascending: false }),
+        supabase.from("missing_child_reports").select("*").order("submitted_at", { ascending: false }),
+      ])
       setLostChildren(childrenData || [])
-      console.log("Lost children fetched successfully:", childrenData?.length || 0)
-
-      // Fetch success stories
-      const { data: storiesData, error: storiesError } = await supabase
-        .from("success_stories")
-        .select("*")
-        .order("created_at", { ascending: false })
-
-      if (storiesError) {
-        console.error("Success stories fetch error:", storiesError)
-        throw storiesError
-      }
       setSuccessStories(storiesData || [])
-      console.log("Success stories fetched successfully:", storiesData?.length || 0)
+      setPublicReports(publicReportsData || [])
     } catch (error) {
       console.error("Failed to fetch data:", error)
-      alert("Failed to load data. Please check your internet connection and try again.")
+      alert("Failed to load data. Please check your internet connection.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Removed filterReports and filterChildren functions as filtered state is no longer used
-
-  const updateReportStatus = async (id: number, status: "pending" | "resolved") => {
-    try {
-      const { error } = await supabase.from("reports").update({ status }).eq("id", id)
-
-      if (!error) {
-        setReports(reports.map((report) => (report.id === id ? { ...report, status } : report)))
-        if (selectedReport && selectedReport.id === id) {
-          setSelectedReport({ ...selectedReport, status })
-        }
-      }
-    } catch (error) {
-      console.error("Failed to update report status:", error)
+  const updatePublicReportStatus = async (id: number, status: "pending" | "resolved") => {
+    const { error } = await supabase.from("missing_child_reports").update({ status }).eq("id", id)
+    if (!error) {
+      setPublicReports(publicReports.map((r) => (r.id === id ? { ...r, status } : r)))
+      if (selectedPublicReport?.id === id) setSelectedPublicReport({ ...selectedPublicReport, status })
     }
   }
 
   const updateChildStatus = async (id: number, status: "active" | "found") => {
-    try {
-      const { error } = await supabase.from("lost_children").update({ status }).eq("id", id)
-
-      if (!error) {
-        setLostChildren(lostChildren.map((child) => (child.id === id ? { ...child, status } : child)))
-        if (selectedChild && selectedChild.id === id) {
-          setSelectedChild({ ...selectedChild, status })
-        }
-      }
-    } catch (error) {
-      console.error("Failed to update child status:", error)
+    const { error } = await supabase.from("lost_children").update({ status }).eq("id", id)
+    if (!error) {
+      setLostChildren(lostChildren.map((c) => (c.id === id ? { ...c, status } : c)))
+      if (selectedChild?.id === id) setSelectedChild({ ...selectedChild, status })
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("hlctk_admin_token")
-    navigate("/admin/login")
-  }
+  const handleLogout = () => { localStorage.removeItem("hlctk_admin_token"); navigate("/admin/login") }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "resolved":
-      case "found":
-        return <CheckCircle className="h-5 w-5 text-green-600" />
-      case "pending":
-      case "active":
-        return <Clock className="h-5 w-5 text-yellow-600" />
-      default:
-        return <AlertCircle className="h-5 w-5 text-gray-600" />
-    }
+    if (status === "resolved" || status === "found") return <CheckCircle className="h-4 w-4 text-green-600" />
+    if (status === "pending" || status === "active") return <Clock className="h-4 w-4 text-yellow-600" />
+    return <AlertCircle className="h-4 w-4 text-gray-600" />
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "resolved":
-      case "found":
-        return "bg-green-100 text-green-800"
-      case "pending":
-      case "active":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+    if (status === "resolved" || status === "found") return "bg-green-100 text-green-800"
+    if (status === "pending" || status === "active") return "bg-yellow-100 text-yellow-800"
+    return "bg-gray-100 text-gray-800"
   }
+
+  const Row = ({ label, value }: { label: string; value: string }) =>
+    value ? (
+      <div>
+        <span className="text-xs font-semibold text-gray-500 uppercase">{label}</span>
+        <p className="text-sm text-gray-900 mt-0.5">{value}</p>
+      </div>
+    ) : null
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
+  const pendingCount = publicReports.filter((r) => r.status === "pending").length
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-between items-center py-6 flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600">Manage reports and missing children posts</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowPostForm(true)}
-                className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Post Missing Child</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button onClick={() => setShowPostForm(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <Plus className="h-4 w-4" /><span>Post Missing Child</span>
               </button>
-              <button
-                onClick={() => setShowPostSuccessStory(true)}
-                className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Post Success Story</span>
+              <button onClick={() => setShowPostSuccessStory(true)} className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                <Plus className="h-4 w-4" /><span>Post Success Story</span>
               </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+              <button onClick={handleLogout} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                <LogOut className="h-4 w-4" /><span>Logout</span>
               </button>
             </div>
           </div>
@@ -238,291 +140,95 @@ const AdminEnhanced = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab("reports")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "reports"
-                    ? "border-primary-500 text-primary-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4" />
-                  <span>Reports ({reports.length})</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab("posted")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "posted"
-                    ? "border-primary-500 text-primary-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4" />
-                  <span>Posted Children ({lostChildren.length})</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab("successStories")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "successStories"
-                    ? "border-purple-500 text-purple-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Heart className="h-4 w-4 text-purple-600" />
-                  <span>Success Stories ({successStories.length})</span>
-                </div>
-              </button>
-            </nav>
-          </div>
-        </div>
-
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <motion.div
-            className="bg-white p-6 rounded-lg shadow"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="flex items-center">
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <FileText className="h-6 w-6 text-blue-600" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: "Public Reports", value: publicReports.length, color: "bg-blue-100", icon: <Bell className="h-6 w-6 text-blue-600" /> },
+            { label: "Pending Reports", value: pendingCount, color: "bg-yellow-100", icon: <Clock className="h-6 w-6 text-yellow-600" /> },
+            { label: "Posted Children", value: lostChildren.length, color: "bg-red-100", icon: <Users className="h-6 w-6 text-red-600" /> },
+            { label: "Found Children", value: lostChildren.filter((c) => c.status === "found").length, color: "bg-green-100", icon: <CheckCircle className="h-6 w-6 text-green-600" /> },
+          ].map((s, i) => (
+            <motion.div key={i} className="bg-white p-5 rounded-lg shadow flex items-center gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+              <div className={`${s.color} p-3 rounded-lg`}>{s.icon}</div>
+              <div>
+                <p className="text-sm text-gray-500">{s.label}</p>
+                <p className="text-2xl font-bold text-gray-900">{s.value}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Reports</p>
-                <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-white p-6 rounded-lg shadow"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center">
-              <div className="bg-yellow-100 p-3 rounded-lg">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Reports</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter((r) => r.status === "pending").length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-white p-6 rounded-lg shadow"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center">
-              <div className="bg-red-100 p-3 rounded-lg">
-                <Users className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Posted Children</p>
-                <p className="text-2xl font-bold text-gray-900">{lostChildren.length}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-white p-6 rounded-lg shadow"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div className="flex items-center">
-              <div className="bg-green-100 p-3 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Found Children</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {lostChildren.filter((c) => c.status === "found").length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder={`Search ${activeTab}...`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
+        {/* Tabs */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex gap-6">
+            <button onClick={() => setActiveTab("publicReports")} className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === "publicReports" ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+              <Bell className="h-4 w-4" />
+              Public Reports ({publicReports.length})
+              {pendingCount > 0 && <span className="bg-red-500 text-white text-xs rounded-full px-1.5">{pendingCount}</span>}
+            </button>
+            <button onClick={() => setActiveTab("posted")} className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === "posted" ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+              <Users className="h-4 w-4" />Posted Children ({lostChildren.length})
+            </button>
+            <button onClick={() => setActiveTab("successStories")} className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === "successStories" ? "border-purple-500 text-purple-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+              <Heart className="h-4 w-4" />Success Stories ({successStories.length})
+            </button>
+          </nav>
+        </div>
 
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
-                  title="Status Filter"
-                >
-                  <option value="all">All Status</option>
-        {activeTab === "reports" ? (
-          /* Reports Table - Same as before */
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            ...
+        {/* Search & Filter */}
+        <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-wrap gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
           </div>
-        ) : activeTab === "posted" ? (
-          /* Posted Children Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            ...
-          </div>
-        ) : (
-          /* Success Stories List */
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4 text-purple-700">Success Stories</h2>
-            {successStories.length === 0 ? (
-              <p className="text-gray-500">No success stories posted yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child Image</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reunited Image</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Reunited</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {successStories.map((story) => (
-                      <tr key={story.id}>
-                        <td className="px-4 py-2">
-                          <img src={story.image_child_url || "/placeholder.svg"} alt="Child" className="w-16 h-16 object-cover rounded" />
-                        </td>
-                        <td className="px-4 py-2">
-                          <img src={story.image_reunited_url || "/placeholder.svg"} alt="Reunited" className="w-16 h-16 object-cover rounded" />
-                        </td>
-                        <td className="px-4 py-2 font-semibold">{story.title}</td>
-                        <td className="px-4 py-2">{story.child_name}, {story.age}</td>
-                        <td className="px-4 py-2">{new Date(story.date_reunited).toLocaleDateString()}</td>
-                        <td className="px-4 py-2 space-x-2">
-                          <button
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                            onClick={() => {
-                              setSelectedSuccessStory(story);
-                              setShowPostSuccessStory(true);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
-                            onClick={async () => {
-                              if (window.confirm("Are you sure you want to delete this success story?")) {
-                                const { error } = await supabase.from("success_stories").delete().eq("id", story.id);
-                                if (!error) {
-                                  fetchData();
-                                } else {
-                                  alert("Failed to delete story.");
-                                }
-                              }
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-                </select>
-              </div>
-            </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none text-sm" title="Filter by status">
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="resolved">Resolved</option>
+              <option value="active">Active</option>
+              <option value="found">Found</option>
+            </select>
           </div>
         </div>
 
-        {/* Content based on active tab */}
-        {activeTab === "reports" ? (
+        {/* Public Reports Tab */}
+        {activeTab === "publicReports" && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child Name</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Gender</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Last Seen Location</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Missing</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    {["Child Name", "Age", "Sex", "Area Lost", "Reported By", "Submitted", "Status", "Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {reports.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
-                        No reports found.
-                      </td>
-                    </tr>
+                  {publicReports.length === 0 ? (
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No public reports yet.</td></tr>
                   ) : (
-                    reports
-                      .filter((r) =>
-                        r.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        r.lastSeenLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        r.reporterName.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
+                    publicReports
+                      .filter((r) => !searchTerm || r.child_name?.toLowerCase().includes(searchTerm.toLowerCase()) || r.reported_by?.toLowerCase().includes(searchTerm.toLowerCase()))
                       .filter((r) => statusFilter === "all" || r.status === statusFilter)
-                      .map((report) => (
-                        <tr key={report.id}>
-                          <td className="px-4 py-2">{report.childName}</td>
-                          <td className="px-4 py-2">{report.age}</td>
-                          <td className="px-4 py-2">{report.gender}</td>
-                          <td className="px-4 py-2">{report.lastSeenLocation}</td>
-                          <td className="px-4 py-2">{new Date(report.dateMissing).toLocaleDateString()}</td>
-                          <td className="px-4 py-2">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                              {getStatusIcon(report.status)}
-                              <span className="ml-1 capitalize">{report.status}</span>
+                      .map((r) => (
+                        <tr key={r.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-gray-900">{r.child_name}</td>
+                          <td className="px-4 py-3 text-gray-600">{r.age}</td>
+                          <td className="px-4 py-3 text-gray-600">{r.sex}</td>
+                          <td className="px-4 py-3 text-gray-600">{r.area_lost}</td>
+                          <td className="px-4 py-3 text-gray-600">{r.reported_by}</td>
+                          <td className="px-4 py-3 text-gray-600 text-xs">{new Date(r.submitted_at).toLocaleDateString()}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(r.status)}`}>
+                              {getStatusIcon(r.status)}{r.status}
                             </span>
                           </td>
-                          <td className="px-4 py-2 space-x-2">
-                            <button
-                              className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                              onClick={() => setSelectedReport(report)}
-                            >
-                              View
-                            </button>
-                            {report.status === "pending" && (
-                              <button
-                                className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
-                                onClick={() => updateReportStatus(report.id, "resolved")}
-                              >
-                                Mark as Resolved
-                              </button>
+                          <td className="px-4 py-3 flex gap-2">
+                            <button onClick={() => setSelectedPublicReport(r)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">View</button>
+                            {r.status === "pending" && (
+                              <button onClick={() => updatePublicReportStatus(r.id, "resolved")} className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">Resolve</button>
                             )}
                           </td>
                         </tr>
@@ -532,116 +238,65 @@ const AdminEnhanced = () => {
               </table>
             </div>
           </div>
-        ) : activeTab === "posted" ? (
+        )}
+
+        {/* Posted Children Tab */}
+        {activeTab === "posted" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {lostChildren.length === 0 ? (
-              <div className="col-span-full text-center text-gray-500 py-8">
-                No posted children found.
-              </div>
+              <div className="col-span-full text-center text-gray-500 py-8">No posted children found.</div>
             ) : (
               lostChildren
-                .filter((child) =>
-                  child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  child.last_seen_location.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .filter((child) => statusFilter === "all" || child.status === statusFilter)
+                .filter((c) => !searchTerm || c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.last_seen_location.toLowerCase().includes(searchTerm.toLowerCase()))
+                .filter((c) => statusFilter === "all" || c.status === statusFilter)
                 .map((child) => (
-                  <div
-                    key={child.id}
-                    className="bg-white rounded-lg shadow p-6 flex flex-col"
-                  >
-                    <div className="w-full h-48 bg-gray-200 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
-                      <img
-                        src={child.image_url || "/placeholder.svg"}
-                        alt={child.name}
-                        className="w-full h-full object-cover"
-                      />
+                  <div key={child.id} className="bg-white rounded-lg shadow p-6 flex flex-col">
+                    <div className="w-full h-48 bg-gray-200 rounded-lg overflow-hidden mb-4">
+                      <img src={child.image_url || "/placeholder.svg"} alt={child.name} className="w-full h-full object-cover" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">{child.name}</h3>
-                      <p className="text-sm text-gray-600 mb-1">Age: {child.age}</p>
-                      <p className="text-sm text-gray-600 mb-1">Gender: {child.gender}</p>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Last Seen: {child.last_seen_location} on {new Date(child.last_seen_date).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-2">{child.description}</p>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(child.status)}`}>
-                        {getStatusIcon(child.status)}
-                        <span className="ml-1 capitalize">{child.status}</span>
-                      </span>
-                    </div>
-                    <div className="mt-4 flex space-x-2">
-                      <button
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                        onClick={() => setSelectedChild(child)}
-                      >
-                        View
-                      </button>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{child.name}</h3>
+                    <p className="text-sm text-gray-600">Age: {child.age} • {child.gender}</p>
+                    <p className="text-sm text-gray-600 mt-1">{child.last_seen_location}</p>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-2 w-fit ${getStatusColor(child.status)}`}>
+                      {getStatusIcon(child.status)}{child.status}
+                    </span>
+                    <div className="mt-4 flex gap-2">
+                      <button onClick={() => setSelectedChild(child)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">View</button>
                       {child.status === "active" && (
-                        <button
-                          className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
-                          onClick={() => updateChildStatus(child.id, "found")}
-                        >
-                          Mark as Found
-                        </button>
+                        <button onClick={() => updateChildStatus(child.id, "found")} className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">Mark Found</button>
                       )}
                     </div>
                   </div>
                 ))
             )}
           </div>
-        ) : activeTab === "successStories" ? (
-          /* Success Stories List */
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4 text-purple-700">Success Stories</h2>
+        )}
+
+        {/* Success Stories Tab */}
+        {activeTab === "successStories" && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
             {successStories.length === 0 ? (
-              <p className="text-gray-500">No success stories posted yet.</p>
+              <p className="p-8 text-center text-gray-500">No success stories yet.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Child</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date Reunited</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      {["Photo", "Title", "Child", "Date Reunited", "Actions"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {successStories.map((story) => (
                       <tr key={story.id}>
-                        <td className="px-4 py-2">
-                          <img src={story.image_child_url || "/placeholder.svg"} alt={story.title} className="w-16 h-16 object-cover rounded" />
-                        </td>
-                        <td className="px-4 py-2 font-semibold">{story.title}</td>
-                        <td className="px-4 py-2">{story.child_name}, {story.age}</td>
-                        <td className="px-4 py-2">{new Date(story.date_reunited).toLocaleDateString()}</td>
-                        <td className="px-4 py-2 space-x-2">
-                          <button
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                            onClick={() => {
-                              setSelectedSuccessStory(story);
-                              setShowPostSuccessStory(true);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
-                            onClick={async () => {
-                              if (window.confirm("Are you sure you want to delete this success story?")) {
-                                const { error } = await supabase.from("success_stories").delete().eq("id", story.id);
-                                if (!error) {
-                                  fetchData();
-                                } else {
-                                  alert("Failed to delete story.");
-                                }
-                              }
-                            }}
-                          >
-                            Delete
-                          </button>
+                        <td className="px-4 py-3"><img src={story.image_child_url || "/placeholder.svg"} alt={story.title} className="w-14 h-14 object-cover rounded" /></td>
+                        <td className="px-4 py-3 font-semibold text-gray-900">{story.title}</td>
+                        <td className="px-4 py-3 text-gray-600">{story.child_name}, {story.age}</td>
+                        <td className="px-4 py-3 text-gray-600">{new Date(story.date_reunited).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 flex gap-2">
+                          <button onClick={() => { setSelectedSuccessStory(story); setShowPostSuccessStory(true) }} className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-xs hover:bg-purple-200">Edit</button>
+                          <button onClick={async () => { if (window.confirm("Delete this story?")) { await supabase.from("success_stories").delete().eq("id", story.id); fetchData() } }} className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -650,121 +305,51 @@ const AdminEnhanced = () => {
               </div>
             )}
           </div>
-        ) : null}
+        )}
       </div>
 
-      {/* Post Child Form Modal */}
-      {showPostForm && (
-        <AdminPostChild
-          onClose={() => setShowPostForm(false)}
-          onSuccess={() => {
-            fetchData()
-            setShowPostForm(false)
-          }}
-        />
-      )}
-      {/* Post Success Story Modal */}
-      {showPostSuccessStory && (
-        <AdminPostSuccessStory
-          onClose={() => {
-            setShowPostSuccessStory(false);
-            setSelectedSuccessStory(null);
-          }}
-          onSuccess={() => {
-            fetchData();
-            setShowPostSuccessStory(false);
-            setSelectedSuccessStory(null);
-          }}
-          story={selectedSuccessStory}
-        />
-      )}
-
-      {/* Report Detail Modal - Same as before */}
-      {selectedReport && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Report Details</h3>
-                <button onClick={() => setSelectedReport(null)} className="text-gray-400 hover:text-gray-600">
-                  ×
+      {/* Public Report Detail Modal */}
+      {selectedPublicReport && (
+        <div className="fixed inset-0 bg-black/40 overflow-y-auto flex justify-center items-start py-10 px-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-900">Missing Child Report — {selectedPublicReport.child_name}</h3>
+              <button onClick={() => setSelectedPublicReport(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Row label="Child's Name" value={selectedPublicReport.child_name} />
+              <Row label="Age" value={selectedPublicReport.age} />
+              <Row label="Sex" value={selectedPublicReport.sex} />
+              <Row label="School" value={selectedPublicReport.school} />
+              <Row label="Last Cloth" value={selectedPublicReport.last_cloth} />
+              <Row label="Where Child Lives" value={selectedPublicReport.child_lives} />
+              <Row label="Area Child Lost" value={selectedPublicReport.area_lost} />
+              <Row label="Time Reported Missing" value={selectedPublicReport.time_reported} />
+              <Row label="Reported By" value={selectedPublicReport.reported_by} />
+              <Row label="Finder Name & Tel" value={selectedPublicReport.finder_name_tel} />
+              <Row label="Father Relationship" value={selectedPublicReport.father_relationship} />
+              <Row label="Mother ID No" value={selectedPublicReport.mother_id} />
+              <Row label="Aunt Telephone" value={selectedPublicReport.aunt_telephone} />
+              <Row label="OB Number" value={selectedPublicReport.ob_number} />
+              <Row label="Time Reunited" value={selectedPublicReport.time_reunited} />
+              <Row label="Receiver Name" value={selectedPublicReport.receiver_name} />
+              <Row label="Receiver Telephone" value={selectedPublicReport.receiver_telephone} />
+              <Row label="Childrens Home" value={selectedPublicReport.childrens_home} />
+              <Row label="Child Received By" value={selectedPublicReport.child_received_by} />
+              <Row label="Official Chaplin" value={selectedPublicReport.official_chaplin} />
+              <Row label="Complainant Name" value={selectedPublicReport.complainant_name} />
+              <Row label="Witness Name" value={selectedPublicReport.witness_name} />
+              <div className="sm:col-span-2"><Row label="Description" value={selectedPublicReport.description} /></div>
+            </div>
+            <div className="flex justify-between items-center mt-6 pt-4 border-t">
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedPublicReport.status)}`}>
+                {getStatusIcon(selectedPublicReport.status)}{selectedPublicReport.status}
+              </span>
+              {selectedPublicReport.status === "pending" && (
+                <button onClick={() => { updatePublicReportStatus(selectedPublicReport.id, "resolved"); setSelectedPublicReport(null) }} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">
+                  Mark as Resolved
                 </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Child's Name</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.childName}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Age</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.age} years old</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Gender</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.gender}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Date Missing</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedReport.dateMissing).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Last Seen Location</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.lastSeenLocation}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.description}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Reporter Name</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.reporterName}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Reporter Contact</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.reporterContact}</p>
-                  </div>
-                </div>
-
-                {selectedReport.reporterEmail && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Reporter Email</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.reporterEmail}</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedReport.status)}`}
-                    >
-                      {getStatusIcon(selectedReport.status)}
-                      <span className="ml-1 capitalize">{selectedReport.status}</span>
-                    </span>
-                  </div>
-
-                  {selectedReport.status === "pending" && (
-                    <button
-                      onClick={() => {
-                        updateReportStatus(selectedReport.id, "resolved")
-                        setSelectedReport(null)
-                      }}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      Mark as Resolved
-                    </button>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -772,105 +357,42 @@ const AdminEnhanced = () => {
 
       {/* Child Detail Modal */}
       {selectedChild && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white mb-10">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Missing Child Details</h3>
-                <button onClick={() => setSelectedChild(null)} className="text-gray-400 hover:text-gray-600 text-2xl">
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {selectedChild.image_url && (
-                  <div className="w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
-                    <img
-                      src={selectedChild.image_url || "/placeholder.svg"}
-                      alt={selectedChild.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Child's Name</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedChild.name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Age</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedChild.age} years old</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Gender</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedChild.gender}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Last Seen Date</label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {new Date(selectedChild.last_seen_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Last Seen Location</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedChild.last_seen_location}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedChild.description}</p>
-                </div>
-
-                {selectedChild.additional_info && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Additional Information</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedChild.additional_info}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedChild.contact_info}</p>
-                  </div>
-                  {selectedChild.contact_email && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Contact Email</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedChild.contact_email}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedChild.status)}`}
-                    >
-                      {getStatusIcon(selectedChild.status)}
-                      <span className="ml-1 capitalize">{selectedChild.status}</span>
-                    </span>
-                  </div>
-
-                  {selectedChild.status === "active" && (
-                    <button
-                      onClick={() => {
-                        updateChildStatus(selectedChild.id, "found")
-                        setSelectedChild(null)
-                      }}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      Mark as Found
-                    </button>
-                  )}
-                </div>
-              </div>
+        <div className="fixed inset-0 bg-black/40 overflow-y-auto flex justify-center items-start py-10 px-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Child Details</h3>
+              <button onClick={() => setSelectedChild(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+            </div>
+            {selectedChild.image_url && <img src={selectedChild.image_url} alt={selectedChild.name} className="w-full h-56 object-cover rounded-lg mb-4" />}
+            <div className="grid grid-cols-2 gap-4">
+              <Row label="Name" value={selectedChild.name} />
+              <Row label="Age" value={String(selectedChild.age)} />
+              <Row label="Gender" value={selectedChild.gender} />
+              <Row label="Last Seen" value={new Date(selectedChild.last_seen_date).toLocaleDateString()} />
+              <div className="col-span-2"><Row label="Location" value={selectedChild.last_seen_location} /></div>
+              <div className="col-span-2"><Row label="Description" value={selectedChild.description} /></div>
+              <Row label="Contact" value={selectedChild.contact_info} />
+              {selectedChild.contact_email && <Row label="Email" value={selectedChild.contact_email} />}
+            </div>
+            <div className="flex justify-between items-center mt-4 pt-4 border-t">
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedChild.status)}`}>
+                {getStatusIcon(selectedChild.status)}{selectedChild.status}
+              </span>
+              {selectedChild.status === "active" && (
+                <button onClick={() => { updateChildStatus(selectedChild.id, "found"); setSelectedChild(null) }} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">Mark as Found</button>
+              )}
             </div>
           </div>
         </div>
+      )}
+
+      {showPostForm && <AdminPostChild onClose={() => setShowPostForm(false)} onSuccess={() => { fetchData(); setShowPostForm(false) }} />}
+      {showPostSuccessStory && (
+        <AdminPostSuccessStory
+          onClose={() => { setShowPostSuccessStory(false); setSelectedSuccessStory(null) }}
+          onSuccess={() => { fetchData(); setShowPostSuccessStory(false); setSelectedSuccessStory(null) }}
+          story={selectedSuccessStory}
+        />
       )}
     </div>
   )
